@@ -141,11 +141,35 @@
 
   // ── UI ──────────────────────────────────────────────────────
 
+  function findThumbnail(overlayEl) {
+    let el = overlayEl;
+    for (let i = 0; i < 8 && el && el !== document.body; i++, el = el.parentElement) {
+      if (el.matches?.('yt-thumbnail-view-model')) return el;
+      const t = el.querySelector?.('yt-thumbnail-view-model');
+      if (t) return t;
+    }
+    return null;
+  }
+
+  // Barra roja de "visto" al 100%, dibujada al instante sin recargar la página.
+  // YouTube ya tiene el progreso real guardado; esto solo refleja el estado ya.
+  function showProgressBar(thumbnailEl) {
+    if (!thumbnailEl || thumbnailEl.querySelector('.wi-progress')) return;
+    thumbnailEl.classList.add('wi-has-progress');
+    const bar = document.createElement('div');
+    bar.className = 'wi-progress';
+    thumbnailEl.appendChild(bar);
+  }
+
   function addButtonToOverlay(overlayEl) {
     if (overlayEl.dataset.wi) return;
     const id = findVideoId(overlayEl);
     if (!id) return;
     overlayEl.dataset.wi = id;
+
+    // Si este video ya se marcó en esta sesión y reaparece al hacer scroll,
+    // volvemos a pintar la barra.
+    if (CLICKED.has(id)) showProgressBar(findThumbnail(overlayEl));
 
     const btn = document.createElement('button');
     btn.className = 'wi-btn';
@@ -160,6 +184,8 @@
         CLICKED.add(id);
         markWatchedInYouTube(id);
       }
+      const thumbnail = findThumbnail(overlayEl);
+      setTimeout(() => showProgressBar(thumbnail), 1000);
     }, true);
 
     overlayEl.appendChild(btn);

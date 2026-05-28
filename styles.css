@@ -4,6 +4,22 @@ yt-thumbnail-hover-overlay-toggle-actions-view-model {
   z-index: 10;
 }
 
+/* Barra roja de "visto" inyectada al instante (replica la de YouTube) */
+yt-thumbnail-view-model.wi-has-progress {
+  position: relative;
+}
+
+.wi-progress {
+  position: absolute;
+  left: 0;
+  bottom: 0;
+  width: 100%;
+  height: 4px;
+  background: #f00;
+  z-index: 50;
+  pointer-events: none;
+}
+
 /* Botón del ojito */
 .wi-btn {
   pointer-events: auto !important;
