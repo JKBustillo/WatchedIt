@@ -30,6 +30,10 @@
     return { client: { clientName: 'WEB', clientVersion: '2.20240101.00.00' } };
   }
 
+  function ytcfgGet(key) {
+    try { return ytcfg.get(key); } catch { return null; }
+  }
+
   function getCookie(name) {
     const m = document.cookie.match(
       new RegExp(`(?:^|; )${name.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}=([^;]*)`)
@@ -50,20 +54,50 @@
   }
 
   function randomCpn() {
+    // Algoritmo de cpn (Content Playback Nonce) replicado de base.js de YouTube
     const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789-_';
-    return Array.from({ length: 16 }, () => chars[Math.floor(Math.random() * 64)]).join('');
+    return Array.from({ length: 16 }, () => chars[Math.floor(Math.random() * 256) & 63]).join('');
+  }
+
+  // Headers que usa la propia web de YouTube en sus peticiones a youtubei.
+  // Sin la autenticación SAPISIDHASH el endpoint devuelve una respuesta
+  // degradada sin playbackTracking, por eso antes salía undefined.
+  async function ytHeaders() {
+    const h = {
+      'Content-Type': 'application/json',
+      'X-Origin': 'https://www.youtube.com',
+      'X-Youtube-Client-Name': String(ytcfgGet('INNERTUBE_CONTEXT_CLIENT_NAME') || 1),
+      'X-Youtube-Client-Version':
+        ytcfgGet('INNERTUBE_CLIENT_VERSION') ||
+        ytcfgGet('INNERTUBE_CONTEXT_CLIENT_VERSION') || '',
+    };
+    const visitor = ytcfgGet('VISITOR_DATA');
+    if (visitor) h['X-Goog-Visitor-Id'] = visitor;
+    const auth = await sapisidHeader();
+    if (auth) {
+      h['Authorization'] = auth;
+      h['X-Goog-AuthUser'] = '0';
+    }
+    return h;
   }
 
   async function markWatchedInYouTube(videoId) {
     const apiKey = getApiKey();
     if (!apiKey) return;
+
+    const headers = await ytHeaders();
     const resp = await fetch(
       `https://www.youtube.com/youtubei/v1/player?key=${apiKey}&prettyPrint=false`,
       {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers,
         credentials: 'include',
-        body: JSON.stringify({ videoId, context: getContext() }),
+        body: JSON.stringify({
+          videoId,
+          context: getContext(),
+          contentCheckOk: true,
+          racyCheckOk: true,
+        }),
       }
     ).catch(() => null);
     if (!resp) return;
@@ -71,28 +105,38 @@
     const data = await resp.json().catch(() => null);
     if (!data) return;
 
-    console.log('[WatchedIt] playbackTracking:', data?.playbackTracking);
-
-    const duration = Math.floor(parseFloat(data?.videoDetails?.lengthSeconds));
-    if (!duration) return;
-
     const tracking = data?.playbackTracking;
-    const auth = await sapisidHeader();
-    const headers = auth ? { Authorization: auth } : {};
+    if (!tracking) return;
+
     const cpn = randomCpn();
 
-    const playbackUrl = tracking?.videostatsPlaybackUrl?.baseUrl;
-    if (playbackUrl) {
-      await fetch(`${playbackUrl}&cpn=${cpn}`, { headers, credentials: 'include' }).catch(() => {});
+    // videostatsPlaybackUrl PRIMERO (inicializa la sesión de reproducción),
+    // luego videostatsWatchtimeUrl (registra el historial / barra al 100%).
+    // YouTube rechaza watchtime si no se llamó playback antes.
+    await pingStats(tracking?.videostatsPlaybackUrl?.baseUrl, cpn, false, headers);
+    await pingStats(tracking?.videostatsWatchtimeUrl?.baseUrl, cpn, true, headers);
+  }
+
+  // Reconstruye la URL de stats preservando los tokens originales (ei, vm, of,
+  // len, docid…) y sobreescribiendo solo los parámetros necesarios, igual que
+  // hace yt-dlp en _mark_watched.
+  async function pingStats(baseUrl, cpn, isWatchtime, headers) {
+    if (!baseUrl) return;
+    const u = new URL(baseUrl);
+    const len = parseFloat(u.searchParams.get('len') || '0');
+    const cmt = String(len > 1 ? len - 1 : len); // justo antes del final
+
+    u.searchParams.set('ver', '2');
+    u.searchParams.set('cpn', cpn);
+    u.searchParams.set('cmt', cmt);
+    u.searchParams.set('el', 'detailpage'); // si no, asume "shorts"
+
+    if (isWatchtime) {
+      u.searchParams.set('st', '0');
+      u.searchParams.set('et', cmt);
     }
 
-    const watchtimeUrl = tracking?.videostatsWatchtimeUrl?.baseUrl;
-    if (watchtimeUrl) {
-      await fetch(
-        `${watchtimeUrl}&cpn=${cpn}&cmt=${duration}&len=${duration}&of=${duration}&final=1&state=7`,
-        { headers, credentials: 'include' }
-      ).catch(() => {});
-    }
+    await fetch(u.toString(), { headers, credentials: 'include' }).catch(() => {});
   }
 
   // ── UI ──────────────────────────────────────────────────────
