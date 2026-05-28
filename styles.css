@@ -1,0 +1,34 @@
+/* Asegurar que el overlay de hover quede por encima de otros elementos */
+yt-thumbnail-hover-overlay-toggle-actions-view-model {
+  position: relative;
+  z-index: 10;
+}
+
+/* Botón del ojito */
+.wi-btn {
+  pointer-events: auto !important;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  border: none;
+  background: rgba(0, 0, 0, 0.6);
+  color: #fff;
+  cursor: pointer;
+  padding: 7px;
+  flex-shrink: 0;
+  transition: background 0.15s, transform 0.15s;
+}
+
+.wi-btn:hover {
+  background: rgba(0, 0, 0, 0.88);
+  transform: scale(1.1);
+}
+
+.wi-btn svg {
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+}
