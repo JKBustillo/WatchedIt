@@ -26,21 +26,22 @@ yt-thumbnail-view-model.wi-has-progress {
   display: flex;
   align-items: center;
   justify-content: center;
-  width: 36px;
-  height: 36px;
+  width: 32px;
+  height: 32px;
+  margin: 6px 4px 0;
   border-radius: 50%;
   border: none;
-  background: rgba(0, 0, 0, 0.6);
+  background: rgba(0, 0, 0, 0.3);
   color: #fff;
   cursor: pointer;
-  padding: 7px;
+  padding: 5px;
   flex-shrink: 0;
-  transition: background 0.15s, transform 0.15s;
+  box-sizing: border-box;
+  transition: background 0.15s;
 }
 
 .wi-btn:hover {
-  background: rgba(0, 0, 0, 0.88);
-  transform: scale(1.1);
+  background: rgba(0, 0, 0, 0.5);
 }
 
 .wi-btn svg {
