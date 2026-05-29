@@ -1,46 +1,49 @@
 # WatchedIt
 
-Extensión de navegador (Chrome/Edge, Manifest V3) que añade un botón con forma de ojo sobre las miniaturas de YouTube para **marcar un video como visto con un clic**, sin tener que abrirlo.
+**English** | [Español](README.es.md)
 
-Al marcarlo, se registra en tu historial de YouTube y se pinta al instante la barra roja de progreso al 100% sobre la miniatura.
+Browser extension (Chrome/Edge, Manifest V3) that adds an eye-shaped button on YouTube thumbnails to **mark a video as watched in one click**, without having to open it.
 
-## Características
+When you mark it, the video is recorded in your YouTube history and the red 100% progress bar is drawn instantly over the thumbnail.
 
-- Botón de ojo que aparece al pasar el ratón sobre la miniatura, integrado junto a los botones nativos de "Añadir a la cola" y "Ver más tarde".
-- Marca el video como visto en tu cuenta usando los endpoints internos de YouTube (`youtubei`), autenticando la petición igual que la propia web.
-- Barra de progreso roja inmediata sobre la miniatura, sin recargar la página.
-- Funciona con videos normales y Shorts.
+## Features
 
-## Instalación (modo desarrollador)
+- Eye button that appears when you hover over a thumbnail, integrated next to the native "Add to queue" and "Watch later" buttons.
+- Marks the video as watched on your account using YouTube's internal endpoints (`youtubei`), authenticating the request the same way the web app does.
+- Instant red progress bar over the thumbnail, without reloading the page.
+- Works with regular videos and Shorts.
 
-1. Clona o descarga este repositorio.
-2. Abre `chrome://extensions` (o `edge://extensions`).
-3. Activa el **Modo de desarrollador** (esquina superior derecha).
-4. Pulsa **Cargar extensión sin empaquetar** y selecciona la carpeta del proyecto.
-5. Abre un canal de YouTube y pasa el ratón sobre una miniatura: aparecerá el botón del ojo.
+## Installation (developer mode)
 
-Tras editar el código, vuelve a `chrome://extensions` y pulsa el botón de recargar de la extensión, luego refresca la pestaña de YouTube.
+1. Clone or download this repository.
+2. Open `chrome://extensions` (or `edge://extensions`).
+3. Enable **Developer mode** (top-right corner).
+4. Click **Load unpacked** and select the project folder.
+5. Open a YouTube channel and hover over a thumbnail: the eye button will appear.
 
-## Estructura del proyecto
+After editing the code, go back to `chrome://extensions`, click the extension's reload button, then refresh the YouTube tab.
+
+## Project structure
 
 ```
 WatchedIt/
-├── icons/            Iconos de la extensión (16/32/48/128 px)
-├── manifest.json     Configuración de la extensión (Manifest V3)
-├── content.js        Lógica: detección de miniaturas, UI del botón y llamadas a la API de YouTube
-├── styles.css        Estilos del botón y de la barra de progreso
-└── README.md
+├── icons/            Extension icons (16/32/48/128 px)
+├── manifest.json     Extension configuration (Manifest V3)
+├── content.js        Logic: thumbnail detection, button UI and YouTube API calls
+├── styles.css        Styles for the button and the progress bar
+├── README.md         Documentation (English)
+└── README.es.md      Documentation (Spanish)
 ```
 
-## Cómo funciona
+## How it works
 
-`content.js` se inyecta en `www.youtube.com` en el mundo `MAIN` (para poder leer `ytcfg`, la configuración interna de YouTube). Observa el DOM con un `MutationObserver` y, cuando aparece el overlay de acciones de una miniatura, le añade el botón del ojo.
+`content.js` is injected into `www.youtube.com` in the `MAIN` world (so it can read `ytcfg`, YouTube's internal configuration). It watches the DOM with a `MutationObserver` and, when a thumbnail's actions overlay appears, it adds the eye button.
 
-Al hacer clic:
+On click:
 
-1. Pide los datos del reproductor al endpoint `youtubei/v1/player`, autenticando con la cabecera `SAPISIDHASH` (derivada de tus cookies) para obtener el `playbackTracking`.
-2. Llama a `videostatsPlaybackUrl` y luego a `videostatsWatchtimeUrl` para registrar la reproducción al 100% en tu historial (mismo flujo que usa yt-dlp en `_mark_watched`).
+1. It requests the player data from the `youtubei/v1/player` endpoint, authenticating with the `SAPISIDHASH` header (derived from your cookies) to obtain the `playbackTracking` data.
+2. It calls `videostatsPlaybackUrl` and then `videostatsWatchtimeUrl` to register the playback at 100% in your history (the same flow yt-dlp uses in `_mark_watched`).
 
-## Aviso
+## Disclaimer
 
-Esta extensión depende de **endpoints y estructuras internas de YouTube** que no son una API pública y **pueden cambiar sin previo aviso**, lo que rompería la funcionalidad. Es un proyecto personal/educativo; úsalo bajo tu propia responsabilidad y solo con tu propia cuenta.
+This extension relies on **internal YouTube endpoints and structures** that are not a public API and **may change without notice**, which would break its functionality. It is a personal/educational project; use it at your own risk and only with your own account.
