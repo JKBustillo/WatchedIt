@@ -49,3 +49,8 @@ yt-thumbnail-view-model.wi-has-progress {
   height: 100%;
   pointer-events: none;
 }
+
+/* Ojito desactivado desde el popup (toggle "Marcar como visto") */
+html.wi-mark-off .wi-btn {
+  display: none !important;
+}

@@ -1,6 +1,25 @@
 (() => {
   const CLICKED = new Set();
 
+  // ── Settings ────────────────────────────────────────────────
+  // content.js vive en MAIN world (sin acceso a chrome.storage); bridge.js
+  // (ISOLATED) lee las preferencias y las relaya por este CustomEvent.
+  let settings = {
+    markWatchedEnabled: true,
+    hideShorts: false,
+    hideMostRelevant: false,
+    hideLive: false,
+  };
+
+  function applySettings() {
+    document.documentElement.classList.toggle('wi-mark-off', !settings.markWatchedEnabled);
+  }
+
+  document.addEventListener('wi-settings', (e) => {
+    try { settings = JSON.parse(e.detail); } catch { return; }
+    applySettings();
+  });
+
   function extractId(href) {
     if (!href) return null;
     const m = href.match(/[?&]v=([^&]+)/);
@@ -230,4 +249,8 @@
       }
     }
   }).observe(document.documentElement, { childList: true, subtree: true });
+
+  // Pedir los settings al puente una vez registrado el listener (cubre que
+  // bridge.js cargue antes o después que este script).
+  document.dispatchEvent(new CustomEvent('wi-request-settings'));
 })();

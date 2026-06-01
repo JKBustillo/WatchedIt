@@ -2,13 +2,14 @@
   "manifest_version": 3,
   "name": "WatchedIt",
   "description": "Marca videos de YouTube como vistos con un clic",
-  "version": "1.0.0",
+  "version": "1.1.0",
   "icons": {
     "16": "icons/icon16.png",
     "32": "icons/icon32.png",
     "48": "icons/icon48.png",
     "128": "icons/icon128.png"
   },
+  "permissions": ["storage"],
   "content_scripts": [
     {
       "matches": ["*://www.youtube.com/*"],
@@ -16,10 +17,16 @@
       "css": ["styles.css"],
       "run_at": "document_idle",
       "world": "MAIN"
+    },
+    {
+      "matches": ["*://www.youtube.com/*"],
+      "js": ["bridge.js"],
+      "run_at": "document_idle"
     }
   ],
   "action": {
     "default_title": "WatchedIt",
+    "default_popup": "popup.html",
     "default_icon": {
       "16": "icons/icon16.png",
       "32": "icons/icon32.png",

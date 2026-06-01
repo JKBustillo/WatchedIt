@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <link rel="stylesheet" href="popup.css">
+</head>
+<body>
+  <header class="wi-header">
+    <svg class="wi-eye" viewBox="0 1 24 22" fill="none" stroke="currentColor"
+         stroke-width="2.25" stroke-linecap="round" stroke-linejoin="round">
+      <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
+      <circle cx="12" cy="12" r="3"></circle>
+    </svg>
+    <h1>WatchedIt</h1>
+  </header>
+
+  <ul class="wi-options">
+    <li class="wi-row">
+      <div class="wi-text">
+        <span class="wi-label">Marcar como visto</span>
+        <span class="wi-desc">Botón del ojito y opción en el menú de ⋮</span>
+      </div>
+      <label class="wi-switch">
+        <input type="checkbox" id="markWatchedEnabled" data-setting>
+        <span class="wi-slider"></span>
+      </label>
+    </li>
+
+    <li class="wi-row">
+      <div class="wi-text">
+        <span class="wi-label">Ocultar Shorts</span>
+        <span class="wi-desc">En inicio, suscripciones y búsqueda</span>
+      </div>
+      <label class="wi-switch">
+        <input type="checkbox" id="hideShorts" data-setting>
+        <span class="wi-slider"></span>
+      </label>
+    </li>
+
+    <li class="wi-row">
+      <div class="wi-text">
+        <span class="wi-label">Ocultar «Más relevantes»</span>
+        <span class="wi-desc">Sección en mis suscripciones</span>
+      </div>
+      <label class="wi-switch">
+        <input type="checkbox" id="hideMostRelevant" data-setting>
+        <span class="wi-slider"></span>
+      </label>
+    </li>
+
+    <li class="wi-row">
+      <div class="wi-text">
+        <span class="wi-label">Ocultar directos</span>
+        <span class="wi-desc">En curso y emisiones pasadas</span>
+      </div>
+      <label class="wi-switch">
+        <input type="checkbox" id="hideLive" data-setting>
+        <span class="wi-slider"></span>
+      </label>
+    </li>
+  </ul>
+
+  <script src="popup.js"></script>
+</body>
+</html>
