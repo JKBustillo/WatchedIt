@@ -13,6 +13,7 @@
 
   function applySettings() {
     document.documentElement.classList.toggle('wi-mark-off', !settings.markWatchedEnabled);
+    applyFilters();
   }
 
   document.addEventListener('wi-settings', (e) => {
@@ -385,6 +386,68 @@
     refitMenu(listbox);
   }
 
+  // ── Filtros: Más relevantes y directos ──────────────────────
+  // (Shorts se ocultan por CSS con la clase wi-hide-shorts de bridge.js.)
+
+  function isSubsPage() {
+    return location.pathname.startsWith('/feed/subscriptions');
+  }
+
+  function isSearchPage() {
+    return location.pathname.startsWith('/results');
+  }
+
+  // Sección "Más relevantes" de Suscripciones: ocultamos el shelf cuyo #title
+  // tenga ese texto exacto. Reversible (toggle quita la clase).
+  function filterMostRelevant() {
+    const on = settings.hideMostRelevant;
+    document.querySelectorAll('ytd-rich-shelf-renderer').forEach((shelf) => {
+      const title = shelf.querySelector('#title');
+      const isMR = !!title && title.textContent.trim() === 'Más relevantes';
+      shelf.classList.toggle('wi-hidden-mr', on && isMR);
+    });
+  }
+
+  function isLiveContainer(c) {
+    // Directo en curso: insignia "EN DIRECTO" en la MINIATURA. No usamos la del
+    // avatar (ytSpecAvatarShapeLiveBadgeText) porque aparece también en vídeos
+    // normales de canales que están emitiendo en otro sitio.
+    const badges = c.querySelectorAll('.ytBadgeShapeText, .badge-shape-wiz__text, ' +
+      '.ytThumbnailBadgeViewModelBadge, ytd-thumbnail-overlay-time-status-renderer, ' +
+      '[overlay-style="LIVE"], .badge-style-type-live-now');
+    for (const b of badges) {
+      if (/en directo|en vivo|live now/i.test(b.textContent || '')) return true;
+    }
+    // Emisiones pasadas ("Emitido hace…", "Se emitió…", "Retransmitido…").
+    if (/emitido hace|se emitió|retransmitido hace/i.test(c.textContent || '')) return true;
+    return false;
+  }
+
+  // Directos (en curso + pasados) en Suscripciones y búsqueda. Usamos toggle
+  // para soportar el reciclado de nodos que hace YouTube al hacer scroll.
+  function filterLive() {
+    const on = settings.hideLive && (isSubsPage() || isSearchPage());
+    document.querySelectorAll(
+      'ytd-rich-item-renderer, ytd-video-renderer, ytd-grid-video-renderer, yt-lockup-view-model'
+    ).forEach((c) => {
+      c.classList.toggle('wi-hidden-live', on && isLiveContainer(c));
+    });
+  }
+
+  function applyFilters() {
+    filterMostRelevant();
+    filterLive();
+  }
+
+  let filtersQueued = false;
+  function scheduleFilters() {
+    if (filtersQueued) return;
+    filtersQueued = true;
+    requestAnimationFrame(() => { filtersQueued = false; applyFilters(); });
+  }
+
+  window.addEventListener('yt-navigate-finish', scheduleFilters);
+
   // ── Init + observer ─────────────────────────────────────────
 
   document.querySelectorAll('yt-thumbnail-hover-overlay-toggle-actions-view-model')
@@ -402,6 +465,8 @@
         }
       }
     }
+    // Re-aplicar filtros JS cuando aparezcan vídeos/secciones nuevos.
+    if (settings.hideMostRelevant || settings.hideLive) scheduleFilters();
   }).observe(document.documentElement, { childList: true, subtree: true });
 
   // Pedir los settings al puente una vez registrado el listener (cubre que

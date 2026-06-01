@@ -61,3 +61,25 @@ html.wi-mark-off .wi-btn {
   width: 24px;
   height: 24px;
 }
+
+/* ── Filtros (Fase C) ─────────────────────────────────────── */
+
+/* Clases que aplica content.js (Más relevantes / directos) */
+.wi-hidden-mr,
+.wi-hidden-live {
+  display: none !important;
+}
+
+/* Ocultar Shorts (toggle "Ocultar Shorts"). Cubre estantes y vídeos sueltos. */
+html.wi-hide-shorts ytd-reel-shelf-renderer,
+html.wi-hide-shorts ytm-shorts-lockup-view-model,
+html.wi-hide-shorts ytm-shorts-lockup-view-model-v2,
+html.wi-hide-shorts grid-shelf-view-model,
+html.wi-hide-shorts ytd-rich-shelf-renderer[is-shorts],
+html.wi-hide-shorts ytd-rich-section-renderer:has(ytd-rich-shelf-renderer[is-shorts]),
+html.wi-hide-shorts ytd-rich-section-renderer:has(ytm-shorts-lockup-view-model),
+html.wi-hide-shorts ytd-rich-item-renderer:has(a[href*="/shorts/"]),
+html.wi-hide-shorts ytd-video-renderer:has(a[href*="/shorts/"]),
+html.wi-hide-shorts ytd-grid-video-renderer:has(a[href*="/shorts/"]) {
+  display: none !important;
+}
