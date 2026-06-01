@@ -1,5 +1,18 @@
 (() => {
   const CLICKED = new Set();
+  const I18N = window.WI_I18N;
+
+  // ── i18n ────────────────────────────────────────────────────
+  // La etiqueta "Marcar como visto" se muestra en el idioma de YouTube para
+  // combinar con el menú. Se resuelve perezosamente (ytcfg listo al usarse).
+  let _label = null;
+  function markLabel() {
+    if (_label == null) {
+      const loc = I18N.pickLocale(ytcfgGet('HL') || document.documentElement.lang);
+      _label = I18N.strings[loc].markWatched;
+    }
+    return _label;
+  }
 
   // ── Settings ────────────────────────────────────────────────
   // content.js vive en MAIN world (sin acceso a chrome.storage); bridge.js
@@ -193,7 +206,7 @@
 
     const btn = document.createElement('button');
     btn.className = 'wi-btn';
-    btn.title = 'Marcar como visto';
+    btn.title = markLabel();
     btn.appendChild(createEyeSvg());
     btn.style.setProperty('pointer-events', 'auto', 'important');
 
@@ -296,7 +309,7 @@
     item.classList.add('wi-menu-item');
 
     const title = item.querySelector('.ytListItemViewModelTitle, .yt-core-attributed-string');
-    if (title) title.textContent = 'Marcar como visto';
+    if (title) title.textContent = markLabel();
 
     // Sustituimos el SVG del icono por el ojito.
     const oldSvg = item.querySelector('svg');
@@ -356,7 +369,7 @@
     item.classList.add('wi-menu-item');
 
     const label = item.querySelector('yt-formatted-string, .yt-core-attributed-string');
-    if (label) label.textContent = 'Marcar como visto';
+    if (label) label.textContent = markLabel();
 
     // Reemplazamos el icono nativo por el ojito (yt-icon usa shadow DOM, así
     // que sustituimos el elemento entero por un span con nuestro SVG).
@@ -398,28 +411,28 @@
   }
 
   // Sección "Más relevantes" de Suscripciones: ocultamos el shelf cuyo #title
-  // tenga ese texto exacto. Reversible (toggle quita la clase).
+  // coincida (en cualquier idioma soportado). Reversible (toggle quita la clase).
   function filterMostRelevant() {
     const on = settings.hideMostRelevant;
     document.querySelectorAll('ytd-rich-shelf-renderer').forEach((shelf) => {
       const title = shelf.querySelector('#title');
-      const isMR = !!title && title.textContent.trim() === 'Más relevantes';
+      const isMR = !!title && I18N.detect.mostRelevant.includes(title.textContent.trim());
       shelf.classList.toggle('wi-hidden-mr', on && isMR);
     });
   }
 
   function isLiveContainer(c) {
-    // Directo en curso: insignia "EN DIRECTO" en la MINIATURA. No usamos la del
-    // avatar (ytSpecAvatarShapeLiveBadgeText) porque aparece también en vídeos
-    // normales de canales que están emitiendo en otro sitio.
+    // Directo en curso: insignia "EN DIRECTO" / "LIVE" en la MINIATURA. No usamos
+    // la del avatar (ytSpecAvatarShapeLiveBadgeText) porque aparece también en
+    // vídeos normales de canales que están emitiendo en otro sitio.
     const badges = c.querySelectorAll('.ytBadgeShapeText, .badge-shape-wiz__text, ' +
       '.ytThumbnailBadgeViewModelBadge, ytd-thumbnail-overlay-time-status-renderer, ' +
       '[overlay-style="LIVE"], .badge-style-type-live-now');
     for (const b of badges) {
-      if (/en directo|en vivo|live now/i.test(b.textContent || '')) return true;
+      if (I18N.detect.liveRe.test(b.textContent || '')) return true;
     }
-    // Emisiones pasadas ("Emitido hace…", "Se emitió…", "Retransmitido…").
-    if (/emitido hace|se emitió|retransmitido hace/i.test(c.textContent || '')) return true;
+    // Emisiones pasadas ("Emitido hace…" / "Streamed … ago", etc.).
+    if (I18N.detect.pastRe.test(c.textContent || '')) return true;
     return false;
   }
 
