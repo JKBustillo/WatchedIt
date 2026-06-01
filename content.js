@@ -233,6 +233,160 @@
     return svg;
   }
 
+  // ── Menú de 3 puntos (kebab) ────────────────────────────────
+  // El popup del menú es único y YouTube reutiliza sus items entre aperturas
+  // (no siempre dispara mutaciones), así que NO dependemos del observer:
+  // inyectamos al pulsar el ⋮ y reintentamos mientras el menú aparece.
+  let menuVideoId = null;
+  let menuAnchor = null;
+  let menuOpenedAt = 0;
+
+  document.addEventListener('click', (e) => {
+    // UI nueva: el ⋮ es un button-view-model dentro de un lockup.
+    // UI vieja: ytd-menu-renderer. Cubrimos ambas.
+    const trigger = e.target?.closest?.('ytd-menu-renderer, button-view-model');
+    if (!trigger) return;
+    menuVideoId = findVideoId(trigger);
+    menuAnchor = trigger;
+    menuOpenedAt = Date.now();
+    // Si el botón no pertenece a un vídeo (no es el ⋮), no hacemos nada; si era
+    // un menú real, la inyección solo prosperará cuando aparezca el menú.
+    if (!menuVideoId) return;
+
+    // Quitamos cualquier ítem nuestro previo (videoId obsoleto) y reintentamos
+    // inyectar mientras el dropdown se renderiza de forma asíncrona.
+    document.querySelectorAll('.wi-menu-item').forEach((el) => el.remove());
+    let tries = 0;
+    const tick = () => {
+      tryInjectIntoOpenMenus();
+      if (++tries < 12) setTimeout(tick, 50);
+    };
+    tick();
+  }, true);
+
+  function tryInjectIntoOpenMenus() {
+    // UI nueva (view-model): yt-list-view-model dentro de un dropdown/sheet.
+    document.querySelectorAll('yt-list-view-model').forEach((list) => {
+      if (list.closest('tp-yt-iron-dropdown, yt-sheet-view-model, ytd-popup-container')) {
+        injectIntoList(list);
+      }
+    });
+    // UI vieja (Polymer): #items con ytd-menu-service-item-renderer.
+    document.querySelectorAll('#items').forEach((lb) => {
+      if (lb.closest('ytd-menu-popup-renderer, tp-yt-iron-dropdown')) {
+        injectIntoListbox(lb);
+      }
+    });
+  }
+
+  // Inyección en el menú nuevo (yt-list-item-view-model).
+  function injectIntoList(list) {
+    if (!settings.markWatchedEnabled) return;
+    if (!menuVideoId || Date.now() - menuOpenedAt > 1500) return;
+    if (list.querySelector('.wi-menu-item')) return;
+
+    const template = list.querySelector('yt-list-item-view-model');
+    if (!template) return;
+
+    const videoId = menuVideoId;
+    const anchor = menuAnchor;
+
+    const item = template.cloneNode(true);
+    item.classList.add('wi-menu-item');
+
+    const title = item.querySelector('.ytListItemViewModelTitle, .yt-core-attributed-string');
+    if (title) title.textContent = 'Marcar como visto';
+
+    // Sustituimos el SVG del icono por el ojito.
+    const oldSvg = item.querySelector('svg');
+    if (oldSvg) {
+      const svg = createEyeSvg();
+      svg.classList.add('wi-menu-eye');
+      oldSvg.replaceWith(svg);
+    }
+
+    item.addEventListener('click', (e) => {
+      e.preventDefault();
+      e.stopImmediatePropagation();
+      if (!CLICKED.has(videoId)) {
+        CLICKED.add(videoId);
+        markWatchedInYouTube(videoId);
+      }
+      const thumb = findThumbnail(anchor);
+      setTimeout(() => showProgressBar(thumb), 1000);
+      closeOpenMenus();
+    }, true);
+
+    // Lo añadimos en el mismo contenedor que el resto de items.
+    template.parentElement.appendChild(item);
+    refitMenu(list);
+  }
+
+  function closeOpenMenus() {
+    document.querySelectorAll('tp-yt-iron-dropdown').forEach((dd) => {
+      try { dd.close?.(); } catch {}
+    });
+  }
+
+  // El dropdown fija su altura al abrirse, antes de que inyectemos el item;
+  // le pedimos que recalcule tamaño/posición para que no aparezca scroll.
+  function refitMenu(el) {
+    const dd = el.closest('tp-yt-iron-dropdown');
+    if (!dd) return;
+    requestAnimationFrame(() => {
+      try { dd.notifyResize?.(); } catch {}
+      try { dd.refit?.(); } catch {}
+    });
+  }
+
+  function injectIntoListbox(listbox) {
+    if (!settings.markWatchedEnabled) return;
+    if (!menuVideoId || Date.now() - menuOpenedAt > 1500) return;
+    if (listbox.querySelector('.wi-menu-item')) return;
+
+    // Clonamos un ítem nativo para heredar el estilo de YouTube.
+    const template = listbox.querySelector('ytd-menu-service-item-renderer');
+    if (!template) return;
+
+    const videoId = menuVideoId;
+    const anchor = menuAnchor;
+
+    const item = template.cloneNode(true);
+    item.classList.add('wi-menu-item');
+
+    const label = item.querySelector('yt-formatted-string, .yt-core-attributed-string');
+    if (label) label.textContent = 'Marcar como visto';
+
+    // Reemplazamos el icono nativo por el ojito (yt-icon usa shadow DOM, así
+    // que sustituimos el elemento entero por un span con nuestro SVG).
+    const icon = item.querySelector('yt-icon');
+    if (icon) {
+      const span = document.createElement('span');
+      span.className = icon.className;
+      const svg = createEyeSvg();
+      svg.classList.add('wi-menu-eye');
+      span.appendChild(svg);
+      icon.replaceWith(span);
+    }
+
+    item.addEventListener('click', (e) => {
+      e.preventDefault();
+      e.stopImmediatePropagation();
+      if (!CLICKED.has(videoId)) {
+        CLICKED.add(videoId);
+        markWatchedInYouTube(videoId);
+      }
+      const thumb = findThumbnail(anchor);
+      setTimeout(() => showProgressBar(thumb), 1000);
+      closeOpenMenus();
+    }, true);
+
+    listbox.appendChild(item);
+    refitMenu(listbox);
+  }
+
+  // ── Init + observer ─────────────────────────────────────────
+
   document.querySelectorAll('yt-thumbnail-hover-overlay-toggle-actions-view-model')
     .forEach(addButtonToOverlay);
 

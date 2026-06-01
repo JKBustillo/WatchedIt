@@ -54,3 +54,10 @@ yt-thumbnail-view-model.wi-has-progress {
 html.wi-mark-off .wi-btn {
   display: none !important;
 }
+
+/* Ojito dentro del ítem del menú de 3 puntos */
+.wi-menu-item .wi-menu-eye {
+  display: block;
+  width: 24px;
+  height: 24px;
+}
