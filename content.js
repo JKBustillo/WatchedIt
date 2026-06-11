@@ -440,6 +440,10 @@
   // para soportar el reciclado de nodos que hace YouTube al hacer scroll.
   function filterLive() {
     const on = settings.hideLive && (isSubsPage() || isSearchPage());
+    // El reflujo del grid solo hace falta en Suscripciones (allí los vídeos van
+    // en filas de huecos fijos). En búsqueda son una lista vertical que ya
+    // recoloca sola al ocultar elementos.
+    document.documentElement.classList.toggle('wi-reflow-grid', settings.hideLive && isSubsPage());
     document.querySelectorAll(
       'ytd-rich-item-renderer, ytd-video-renderer, ytd-grid-video-renderer, yt-lockup-view-model'
     ).forEach((c) => {

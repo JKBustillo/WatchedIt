@@ -70,6 +70,22 @@ html.wi-mark-off .wi-btn {
   display: none !important;
 }
 
+/* Reflujo del grid al ocultar directos. YouTube agrupa los vídeos de
+   Suscripciones en filas de 3 huecos fijos (ytd-rich-grid-row); al ocultar un
+   directo el hueco se libera SOLO en su fila y los vídeos de las filas
+   siguientes no suben a rellenarlo, dejando huecos raros. Aplanamos las filas
+   (display: contents) para que todos los vídeos sean hijos directos del grid y
+   se recoloquen ocupando los espacios libres. Solo activo con wi-reflow-grid. */
+html.wi-reflow-grid ytd-rich-grid-renderer > #contents {
+  display: flex !important;
+  flex-wrap: wrap !important;
+}
+
+html.wi-reflow-grid ytd-rich-grid-row,
+html.wi-reflow-grid ytd-rich-grid-row > #contents {
+  display: contents !important;
+}
+
 /* Ocultar Shorts (toggle "Ocultar Shorts"). Cubre estantes y vídeos sueltos. */
 html.wi-hide-shorts ytd-reel-shelf-renderer,
 html.wi-hide-shorts ytm-shorts-lockup-view-model,
