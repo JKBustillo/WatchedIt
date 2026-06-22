@@ -410,6 +410,10 @@
     return location.pathname.startsWith('/results');
   }
 
+  function isHomePage() {
+    return location.pathname === '/';
+  }
+
   // Sección "Más relevantes" de Suscripciones: ocultamos el shelf cuyo #title
   // coincida (en cualquier idioma soportado). Reversible (toggle quita la clase).
   function filterMostRelevant() {
@@ -439,11 +443,11 @@
   // Directos (en curso + pasados) en Suscripciones y búsqueda. Usamos toggle
   // para soportar el reciclado de nodos que hace YouTube al hacer scroll.
   function filterLive() {
-    const on = settings.hideLive && (isSubsPage() || isSearchPage());
-    // El reflujo del grid solo hace falta en Suscripciones (allí los vídeos van
-    // en filas de huecos fijos). En búsqueda son una lista vertical que ya
-    // recoloca sola al ocultar elementos.
-    document.documentElement.classList.toggle('wi-reflow-grid', settings.hideLive && isSubsPage());
+    const on = settings.hideLive && (isSubsPage() || isSearchPage() || isHomePage());
+    // El reflujo del grid hace falta en Suscripciones e Inicio (allí los vídeos
+    // van en filas de huecos fijos, ytd-rich-grid-renderer). En búsqueda son una
+    // lista vertical que ya recoloca sola al ocultar elementos.
+    document.documentElement.classList.toggle('wi-reflow-grid', settings.hideLive && (isSubsPage() || isHomePage()));
     document.querySelectorAll(
       'ytd-rich-item-renderer, ytd-video-renderer, ytd-grid-video-renderer, yt-lockup-view-model'
     ).forEach((c) => {
